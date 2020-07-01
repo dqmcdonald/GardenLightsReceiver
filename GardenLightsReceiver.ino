@@ -80,7 +80,7 @@ RH_NRF24 driver;
 // Class to manage message delivery and receipt, using the driver declared above
 RHReliableDatagram manager(driver, RECEIVER_ADDRESS);
 
-RTC_DS1307 rtc;
+RTC_DS3231  rtc;
 
 void setup()
 {
@@ -107,30 +107,26 @@ void setup()
     while (1);
   }
 
-  if (! rtc.isrunning()) {
-    Serial.println("RTC is NOT running, let's set the time!");
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    //rtc.adjust(DateTime(2020, 6, 12, 11, 28, 0));
-  } 
-  
-    Serial.println("RTC is running!");
-    DateTime now = rtc.now();
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print("  ");
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    Serial.print(now.minute(), DEC);
-    Serial.print(':');
-    Serial.print(now.second(), DEC);
-    Serial.println();
+
+  // When time needs to be set on a new device, or after a power loss, the
+  // following line sets the RTC to the date & time this sketch was compiled
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+ 
+
+  Serial.println("RTC is running!");
+  DateTime now = rtc.now();
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print("  ");
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
 
 
 
@@ -158,7 +154,7 @@ void setup()
 
   pinMode( SLEEP_BUTTON_PIN, INPUT_PULLUP );
 
-  Serial.println("Garden Lights Receiver setup Ccmplete" );
+  Serial.println("Garden Lights Receiver setup complete" );
 }
 
 
@@ -169,22 +165,26 @@ uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
 void loop()
 {
 
- DateTime now = rtc.now();
+
 
   // If the sleep button is "on" then at any hour before 5pm or after midnight
-  // we will go to sleep. This is simply to save a bit of power. 
-  if ( digitalRead( SLEEP_BUTTON_PIN) == LOW && now.hour() < 17  ) {
-    digitalWrite( CHANNEL_ONE_PIN, LOW );
-    digitalWrite( CHANNEL_TWO_PIN, LOW );
-    // Can only sleep for 8 seconds but do it enough time to do it
-    // for a total of 24 seconds 
-    for ( int i = 0; i < NUM_SLEEPS; i++ ) {
-      LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+  // we will go to sleep. This is simply to save a bit of power.
+  if ( digitalRead( SLEEP_BUTTON_PIN) == LOW ) {
+    DateTime now = rtc.now();
+    if ( now.hour() < 17  ) {
+
+      digitalWrite( CHANNEL_ONE_PIN, LOW );
+      digitalWrite( CHANNEL_TWO_PIN, LOW );
+
+      // Can only sleep for 8 seconds but do it enough time to do it
+      // for a total of 24 seconds
+      for ( int i = 0; i < NUM_SLEEPS; i++ ) {
+        LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+      }
+
+      Serial.println("Waking up");
+      Serial.flush();
     }
-
-    Serial.println("Waking up");
-    Serial.flush();
-
   } else {
     // Check for a message from the transmitter
     if (manager.available())
