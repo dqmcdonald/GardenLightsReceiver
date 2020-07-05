@@ -82,6 +82,9 @@ RHReliableDatagram manager(driver, RECEIVER_ADDRESS);
 
 RTC_DS3231  rtc;
 
+// flag to indicate sleeping
+bool do_sleep = false;
+
 void setup()
 {
   Serial.begin(9600);
@@ -111,7 +114,7 @@ void setup()
   // When time needs to be set on a new device, or after a power loss, the
   // following line sets the RTC to the date & time this sketch was compiled
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
- 
+
 
   Serial.println("RTC is running!");
   DateTime now = rtc.now();
@@ -162,6 +165,7 @@ void setup()
 uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
 
 
+
 void loop()
 {
 
@@ -172,7 +176,7 @@ void loop()
   if ( digitalRead( SLEEP_BUTTON_PIN) == LOW ) {
     DateTime now = rtc.now();
     if ( now.hour() < 17  ) {
-
+      do_sleep = true;
       digitalWrite( CHANNEL_ONE_PIN, LOW );
       digitalWrite( CHANNEL_TWO_PIN, LOW );
 
@@ -184,8 +188,14 @@ void loop()
 
       Serial.println("Waking up");
       Serial.flush();
+    } else {
+      do_sleep = false;
     }
   } else {
+    do_sleep = false;
+  }
+
+  if ( !do_sleep ) {
     // Check for a message from the transmitter
     if (manager.available())
     {
